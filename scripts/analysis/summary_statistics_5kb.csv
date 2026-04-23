@@ -1,0 +1,2 @@
+n_genes,mean_peaks_per_gene,median_peaks_per_gene,mean_h3k9me2_signal,sd_h3k9me2_signal,mean_expression,sd_expression,min_distance_avg,max_distance_avg
+4658,4.329969944182053,1,9.111756391519966,149.23611995574106,2.631707932109423,2.628104238789527,2431.8286818376987,2747.8270011755317
