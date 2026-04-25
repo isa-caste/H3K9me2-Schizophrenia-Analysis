@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-# --- Load peak-gene expression merged file ---
+# Load peak-gene expression merged file 
 print("\nLoading peak-gene expression data...")
 peak_gene_expr = pd.read_csv(
     "peak_gene_expression_merged.tsv", 
@@ -17,7 +17,7 @@ peak_gene_expr_filtered = peak_gene_expr[peak_gene_expr['gene_id'].notna()].copy
 print(f"Kept {len(peak_gene_expr_filtered)} peak-gene associations with gene IDs")
 print(f"Dropped {len(peak_gene_expr) - len(peak_gene_expr_filtered)} peaks without gene IDs")
 
-# --- Load DEG results ---
+# Load DEG results 
 print("\nLoading DEG results...")
 deg = pd.read_csv(
     "/N/project/Krolab/isabella/H3K9me2-Research/rna-seq/DEG/limma_deg_results.csv", 
@@ -25,13 +25,13 @@ deg = pd.read_csv(
 )
 print(f"Loaded {len(deg)} genes from DEG analysis")
 
-# --- Strip Ensembl version number from DEG index ---
+#  Strip Ensembl version number from DEG index 
 print("\nCleaning Ensembl IDs (removing version numbers)...")
 deg.index = deg.index.str.replace(r'\.\d+$', '', regex=True)
 deg.reset_index(inplace=True)
 deg.rename(columns={"index": "gene_id"}, inplace=True)
 
-# --- Merge DEGs with peak-associated genes directly on gene_id ---
+#  Merge DEGs with peak-associated genes directly on gene_id 
 print("\nMerging peak-gene data with DEG results on gene_id...")
 peak_gene_deg = peak_gene_expr_filtered.merge(
     deg, 
@@ -56,19 +56,19 @@ print("adj.P.Val null count:", peak_gene_deg['adj.P.Val'].isna().sum())
 print("adj.P.Val unique sample:", peak_gene_deg['adj.P.Val'].dropna().head(10).tolist())
 print("adj.P.Val dtype:", peak_gene_deg['adj.P.Val'].dtype)
 
-# --- Add significance flags ---
+# Add significance flags 
 print("\nAdding significance flags...")
 peak_gene_deg['is_significant_raw'] = (peak_gene_deg['P.Value'] < 0.05)
 peak_gene_deg['is_significant_adj'] = (peak_gene_deg['adj.P.Val'] < 0.05)
 peak_gene_deg['is_upregulated'] = (peak_gene_deg['logFC'] > 0)
 peak_gene_deg['is_downregulated'] = (peak_gene_deg['logFC'] < 0)
 
-# --- Save unfiltered output ---
+# Save unfiltered output 
 print("\nSaving unfiltered results...")
 peak_gene_deg.to_csv("peak_gene_DEGs_unfiltered.tsv", sep="\t", index=False)
 print("✓ Saved: peak_gene_DEGs_unfiltered.tsv")
 
-# --- Filter for significant DEGs (adj.P.Val < 0.05) ---
+#Filter for significant DEGs
 print("\nFiltering for significant DEGs (adj.P.Val < 0.05)...")
 significant = peak_gene_deg[peak_gene_deg['adj.P.Val'] < 0.05].copy()
 print(f"Found {len(significant)} peak-gene associations with significant DEGs (FDR < 0.05)")
@@ -89,7 +89,7 @@ if len(significant) > 0:
 significant.to_csv("peak_gene_DEGs_significant.tsv", sep="\t", index=False)
 print("\n✓ Saved: peak_gene_DEGs_significant.tsv")
 
-# --- Also filter by raw p-value (less stringent) ---
+# Also filter by raw p-value (less stringent)
 print("\nFiltering for genes with raw P.Value < 0.05...")
 significant_raw = peak_gene_deg[peak_gene_deg['P.Value'] < 0.05].copy()
 print(f"Found {len(significant_raw)} peak-gene associations with raw P < 0.05")
@@ -105,7 +105,7 @@ if len(significant_raw) > 0:
 significant_raw.to_csv("peak_gene_DEGs_rawP_filtered.tsv", sep="\t", index=False)
 print("\n✓ Saved: peak_gene_DEGs_rawP_filtered.tsv")
 
-# --- Create gene-level summary (one row per gene) ---
+# Create gene-level summary (one row per gene)
 print("\nCreating gene-level summary...")
 
 # For genes with DEG data, aggregate peak information
