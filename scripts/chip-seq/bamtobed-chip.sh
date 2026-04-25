@@ -1,26 +1,16 @@
 #!/bin/bash  
-
 #SBATCH --mail-user=isacaste@iu.edu  
-
 #SBATCH --nodes=2  
-
 #SBATCH --mem=16g  
 #SBATCH --array=0-10
 #SBATCH -p gpu
- #SBATCH --ntasks-per-node=2 
-
+#SBATCH --ntasks-per-node=2 
 #SBATCH --gpus-per-node=1  
-
 #SBATCH --time=1-23:59:00  
-
 #SBATCH --mail-type=BEGIN,FAIL,END  
-
 #SBATCH --job-name=bamtobedchip 
-
 #SBATCH -o bamtobedchip.out  
-
 #SBATCH -e bamtobedchip.err  
-
 #SBATCH -A r00750 
 module load bedtools
 
