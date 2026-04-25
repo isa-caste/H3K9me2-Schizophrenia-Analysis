@@ -8,7 +8,12 @@ Despite decades of research, common treatments for Schizophrenia remain largely 
 - SCZ samples show significantly more H3K9me2 markers per gene than controls, suggesting elevated repression
 - However, direction of H3K9me2 change at individual genes does not predict direction of expression change
 - This suggests H3K9me2 operates at the chromatin domain level rather than as a precise per-gene switch
+
 ## Data 
+| Dataset | Source | Samples | Region |
+|---------|--------|---------|--------|
+| ChIP-seq (H3K9me2) | [GSE215991](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE215991) / [PRJNA891668](https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA891668) | 15 SCZ, 15 controls | PFC, Brodmann area 9 |
+| RNA-seq | [PRJNA695206](https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA695206) | 19 SCZ, 18 controls | PFC, Brodmann area 10 |
 
 ## Pipeline Overview
 **Preprocessing**
