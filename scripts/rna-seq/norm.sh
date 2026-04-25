@@ -14,5 +14,4 @@
 
 # load modules
 module load r
-
 Rscript norm.R
