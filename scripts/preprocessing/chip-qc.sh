@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #SBATCH --mail-user=isacaste@iu.edu
 #SBATCH --nodes=2
 #SBATCH --mem=16g
@@ -15,7 +14,7 @@
 
 # Load Conda and activate environment
 module load conda
-source activate align-qc-env  # or use 'conda activate' if your shell is set up for it
+source activate align-qc-env 
 
 # Go to FASTQ directory
 cd /N/project/Krolab/isabella/data/chip-seq/trimming/trimmed-files

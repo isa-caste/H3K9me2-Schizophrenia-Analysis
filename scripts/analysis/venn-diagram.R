@@ -1,12 +1,4 @@
-# =============================================================================
-# DMG vs DEG Venn Diagram (final layout)
-# =============================================================================
-# DMG: unique Ensembl gene_ids in peak_gene_DEGs_unfiltered.tsv where
-#      peak_score > -log10(0.05) == 1.301 (DiffReps peak raw p < 0.05).
-# DEG: unique Ensembl IDs from FULL limma_deg_results.csv with P.Value < 0.05.
-# Matched on Ensembl IDs.
-# =============================================================================
-
+# DMG vs DEG Venn Diagram 
 library(ggplot2)
 
 PEAK_GENE_FILE <- "peak_gene_DEGs_unfiltered.tsv"
@@ -84,7 +76,7 @@ write.csv(attach_names(dmg_only),
 write.csv(attach_names(deg_only),
           file.path(OUT_DIR, "DEG_only.csv"), row.names = FALSE)
 
-# ---- Venn plot --------------------------------------------------------------
+# Venn plot 
 cat("\n6. Making Venn...\n")
 make_circle <- function(x0, y0, r, n = 200) {
   theta <- seq(0, 2 * pi, length.out = n)
@@ -173,4 +165,3 @@ if (length(coord_genes) > 0) {
     sprintf("Coordinated:      %d  (in overlap: %d)\n",
             length(coord_genes), length(coord_in_overlap)))
 }
-

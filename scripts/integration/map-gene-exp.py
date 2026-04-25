@@ -1,12 +1,10 @@
-
-#!/usr/bin/env python3
 #!/usr/bin/env python3
 import pandas as pd
 
 # Load RNA-seq expression matrix
 expr = pd.read_csv("/N/project/Krolab/isabella/rna-seq/quant-norm/logCPM_TMM.csv", index_col=0)
 
-# Remove Ensembl version suffix from gene IDs (e.g., ENSG0000012345.6 → ENSG0000012345)
+# Remove Ensembl version suffix from gene IDs
 expr.index = expr.index.str.replace(r'\.\d+$', '', regex=True)
 expr.index = expr.index.astype(str).str.strip()  # Added strip to remove whitespace
 
@@ -28,7 +26,7 @@ map_df = pd.read_csv(
     names=["gene_id", "gene_name"]
 )
 
-# 🔧 CRITICAL FIX: Also clean the mapping file gene IDs
+# clean the mapping file gene IDs
 map_df["gene_id"] = map_df["gene_id"].str.replace(r'\.\d+$', '', regex=True)
 map_df["gene_id"] = map_df["gene_id"].astype(str).str.strip()  # Added strip
 map_df["gene_name"] = map_df["gene_name"].astype(str).str.strip()  # Added strip
