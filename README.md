@@ -53,7 +53,6 @@ H3K9me2-Schizophrenia-Analysis/
 ├── poster/                 # Project poster  
 ```
 ## Dependancies 
-## Dependencies
 
 **Command-line tools**
 - Trimmomatic
