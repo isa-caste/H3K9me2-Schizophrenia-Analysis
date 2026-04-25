@@ -15,8 +15,6 @@
 # Load module
 module load subread
 
-#!/bin/bash
-
 # Set paths
 BAM_DIR=/N/project/Krolab/isabella/rna-seq/rna-align/rna-bam
 GTF_FILE=/N/project/Krolab/isabella/annotations/gencode.v38.annotation.gtf
