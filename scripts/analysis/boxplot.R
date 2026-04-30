@@ -1,142 +1,100 @@
-#!/usr/bin/env Rscript
-# Per-Sample Correlation Boxplot: Control vs SCZ
-# Calculates correlation between H3K9me2 and expression for EACH sample
+# load packages 
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(readr)
+  library(readxl)
+  library(ggplot2)
+  library(ggpubr)    
+  library(grid)
+})
+ # directory set up
+PROJECT_ROOT <- "/N/project/Krolab/isabella/H3K9me2-Research/ds-analysis"
+OUT_DIR <- PROJECT_ROOT
+CORR_CSV <- file.path(PROJECT_ROOT, "per_sample_correlations.csv")
+corr <- read_csv(CORR_CSV, show_col_types = FALSE)
 
-library(tidyverse)
-library(ggplot2)
+# function to format p-values
+fmt_p <- function(p) {
+  if (is.na(p)) return("NA")
+  if (p < 1e-4) return(sprintf("p = %.2e", p))
+  if (p < 0.001) return("p < 0.001")
+  sprintf("p = %.3f", p)
+}
 
-setwd("/N/project/Krolab/isabella/ds-analysis")
-dir.create("correlation_analysis_5kb", showWarnings = FALSE)
+############################################
+# auto detect column names
+###########################################
+group_col <- intersect(c("group","Group","sample_group","SampleGroup",
+                         "condition","Condition"), names(corr))[1]
+r_col <- intersect(c("correlation","pearson_r","r","negative_pearson",
+                     "neg_pearson_r","neg_r","pearson"), names(corr))[1]
+if (is.na(group_col) || is.na(r_col)) {
+  stop("Couldn't autodetect columns in per_sample_correlations.csv.\n",
+       "Columns present: ", paste(names(corr), collapse = ", "),
+       "\nEdit group_col / r_col manually.")
+}
+message("  group column: ", group_col, " | value column: ", r_col)
 
-# 1. LOAD THE MERGED DATA
-# Load the merged dataset we created earlier
-merged_data <- read_csv("correlation_analysis_5kb/h3k9me2_expression_merged_5kb.csv")
+corr$group_clean <- ifelse(
+  grepl("cont|npc|ctrl", corr[[group_col]], ignore.case = TRUE),
+  "Control", "Case")
 
-# Load the full expression data (we need individual sample columns)
-gene_expression <- read_csv("logCPM_TMM_cleaned.csv") %>%
-  mutate(ensembl_id = str_replace(GeneID, "\\.\\d+$", ""))
+############################################
+# Stat tests
+###########################################
+ctrl_vals <- corr[[r_col]][corr$group_clean == "Control"]
+case_vals <- corr[[r_col]][corr$group_clean == "Case"]
 
-# Load gene mapping
-gene_mapping <- read_tsv("/N/project/Krolab/isabella/annotations/ensembl_id_to_name.tsv",
-                        col_names = c("ensembl_id_versioned", "gene_symbol")) %>%
-  mutate(ensembl_id = str_replace(ensembl_id_versioned, "\\.\\d+$", ""))
+# Shapiro-Wilk normality tests
+sw_ctrl <- shapiro.test(ctrl_vals)
+sw_case <- shapiro.test(case_vals)
+# Wilcoxon rank-sum test (non-parametric)
+wx <- wilcox.test(ctrl_vals, case_vals, exact = FALSE)
+# T-test (parametric, for reference)
+tt <- t.test(ctrl_vals, case_vals, var.equal = FALSE)
 
-# Add gene symbols to expression data
-expression_with_symbols <- gene_expression %>%
-  left_join(gene_mapping %>% select(ensembl_id, gene_symbol), by = "ensembl_id") %>%
-  filter(!is.na(gene_symbol))
-
-# 2. PREPARE DATA FOR PER-SAMPLE CORRELATIONS
-cat("Preparing data for per-sample correlations...\n")
-# Keep only genes that have H3K9me2 peaks (those in merged_data)
-genes_with_peaks <- unique(merged_data$gene_name)
-# Filter expression data to only these genes
-expression_filtered <- expression_with_symbols %>%
-  filter(gene_symbol %in% genes_with_peaks) %>%
-  select(gene_symbol, starts_with("cntrl_rna"), starts_with("scz_rna"))
-# Get H3K9me2 signal per gene (we'll use sum_log2FC)
-h3k9me2_signal <- merged_data %>%
-  select(gene_name, sum_log2FC)
-# Merge
-data_for_correlation <- expression_filtered %>%
-  left_join(h3k9me2_signal, by = c("gene_symbol" = "gene_name"))
-
-# 3. CALCULATE CORRELATION FOR EACH SAMPLE
-cat("\nCalculating per-sample correlations...\n")
-# Get all sample column names
-control_samples <- colnames(data_for_correlation)[str_detect(colnames(data_for_correlation), "^cntrl_rna")]
-scz_samples <- colnames(data_for_correlation)[str_detect(colnames(data_for_correlation), "^scz_rna")]
-# Function to calculate correlation for one sample
-calc_sample_correlation <- function(sample_col, data, method = "pearson") {
-  x <- data$sum_log2FC
-  y <- data[[sample_col]]
-  # Remove NA values
-  valid_idx <- !is.na(x) & !is.na(y) & is.finite(x) & is.finite(y)
-  if (sum(valid_idx) < 3) {
-    return(NA)
-  }
-  cor(x[valid_idx], y[valid_idx], method = method)
-# Calculate correlations for all control samples
-control_correlations <- tibble(
-  sample = control_samples,
-  correlation = -map_dbl(control_samples, ~calc_sample_correlation(.x, data_for_correlation)),
-  group = "Control"
+#summary
+summary_txt <- paste0(
+  "per-sample Pearson r: Control vs Case\n",
+  strrep("-", 46), "\n",
+  sprintf("n Control = %d, n Case = %d\n", length(ctrl_vals), length(case_vals)),
+  sprintf("median r: Control = %.4f, Case = %.4f\n",
+          median(ctrl_vals), median(case_vals)),
+  sprintf("mean r:   Control = %.4f, Case = %.4f\n",
+          mean(ctrl_vals), mean(case_vals)),
+  "\n",
+  sprintf("Shapiro-Wilk (Control): W = %.4f, %s\n",
+          sw_ctrl$statistic, fmt_p(sw_ctrl$p.value)),
+  sprintf("Shapiro-Wilk (Case):    W = %.4f, %s\n",
+          sw_case$statistic, fmt_p(sw_case$p.value)),
+  "  (Shapiro p < 0.05 means the group is NOT normally distributed\n",
+  "   -> Wilcoxon is the right test. If both >= 0.05, t-test is fine too.)\n",
+  "\n",
+  sprintf("Wilcoxon rank-sum: W = %.2f, %s\n",
+          wx$statistic, fmt_p(wx$p.value)),
+  sprintf("Welch's t-test (reference): t = %.3f, df = %.2f, %s\n",
+          tt$statistic, tt$parameter, fmt_p(tt$p.value)),
+  "\n",
+  sprintf(">> caption: %s (Wilcoxon rank-sum)\n",
+          fmt_p(wx$p.value))
 )
-# calculate correlations for all scz samples
-scz_correlations <- tibble(
-  sample = scz_samples,
-  correlation = -map_dbl(scz_samples, ~calc_sample_correlation(.x, data_for_correlation)),  
-  group = "Case"  
-)
-# Combine
-all_correlations <- bind_rows(control_correlations, scz_correlations) %>%
-  filter(!is.na(correlation)) %>%
-  # Set factor levels to control order (cntrl on left, scz(case) on right)
-  mutate(group = factor(group, levels = c("Control", "Case")))
-cat(sprintf("Control samples: %d correlations calculated\n", sum(all_correlations$group == "Control")))
-cat(sprintf("Case samples: %d correlations calculated\n", sum(all_correlations$group == "Case")))
-# Print summary statistics
-cat("\nSummary statistics:\n")
-summary_stats <- all_correlations %>%
-  group_by(group) %>%
-  summarise(
-    n = n(),
-    mean = mean(correlation),
-    median = median(correlation),
-    sd = sd(correlation),
-    min = min(correlation),
-    max = max(correlation)
-  )
-print(summary_stats)
-# Save the data
-write_csv(all_correlations, "correlation_analysis_5kb/per_sample_correlations.csv")
+cat(summary_txt)
+writeLines(summary_txt, file.path(OUT_DIR, "wk_stats_summary.txt"))
 
-# 4. CREATE THE BOXPLOT
-# Create the plot matching the style of the uploaded image
-p <- ggplot(all_correlations, aes(x = group, y = correlation, fill = group)) +
-  geom_boxplot(alpha = 0.7, outlier.shape = NA) +  
-  geom_jitter(width = 0.2, alpha = 0.5, size = 2.5, color = "gray40") + 
-  scale_fill_manual(values = c("Control" = "#7AB8A8", "Case" = "#E89B7E")) + 
-  labs(
-    title = "Pearson Correlation by Group",
-    x = "Sample Group",
-    y = "Negative Pearson Correlation (-r)"
-  ) +
-  theme_classic() +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
-    axis.title = element_text(size = 12),
-    axis.text = element_text(size = 11),
-    legend.position = "none"
-  )
+# create boxplot
+corr_flipped <- corr
+corr_flipped$correlation_flipped <- -corr[[r_col]]
 
-ggsave("correlation_analysis_5kb/boxplot_per_sample_correlations.png", 
-       p, width = 8, height = 6, dpi = 300)
+boxplot_flipped <- ggplot(corr_flipped, aes(x = group_clean, y = correlation_flipped, fill = group_clean)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.12, size = 1.8, alpha = 0.7, color = "grey30") +
+  scale_fill_manual(values = c(Control = "cornflowerblue",  Case = "tomato3")) +
+  labs(x = "Sample Group",
+       y = "Negative Pearson Correlation (-r)",
+       title = "Pearson Correlation by Group") +
+  theme_classic(base_size = 13) +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold"))
 
-cat("\nBoxplot saved to: correlation_analysis_5kb/boxplot_per_sample_correlations.png\n")
-
-# 5. STATISTICAL TEST
-# Test if correlations differ between groups
-control_cors <- all_correlations %>% filter(group == "Control") %>% pull(correlation)
-case_cors <- all_correlations %>% filter(group == "Case") %>% pull(correlation)
-# Wilcoxon test (non-parametric)
-wilcox_result <- wilcox.test(control_cors, case_cors)
-cat(sprintf("Wilcoxon rank-sum test p-value: %.4f\n", wilcox_result$p.value))
-# T-test (parametric)
-t_result <- t.test(control_cors, case_cors)
-cat(sprintf("T-test p-value: %.4f\n", t_result$p.value))
-# Save test results
-test_results <- tibble(
-  test = c("Wilcoxon", "T-test"),
-  p_value = c(wilcox_result$p.value, t_result$p.value),
-  control_mean = c(mean(control_cors), mean(control_cors)),
-  case_mean = c(mean(case_cors), mean(case_cors)),
-  difference = c(mean(control_cors) - mean(case_cors), mean(control_cors) - mean(case_cors))
-)
-write_csv(test_results, "correlation_analysis_5kb/group_comparison_stats.csv")
-
-cat("\n=== Analysis Complete ===\n")
-cat("Generated files:\n")
-cat("  - boxplot_per_sample_correlations.png (main plot)\n")
-cat("  - per_sample_correlations.csv (correlation values)\n")
-cat("  - group_comparison_stats.csv (statistical test results)\n")
+ggsave(file.path(OUT_DIR, "boxplot_per_sample_correlations.png"), boxplot_flipped,
+       width = 7, height = 5, dpi = 300)

@@ -4,18 +4,18 @@ import pandas as pd
 cols = ['peak_chrom', 'peak_start', 'peak_end', 'peak_direction', 'peak_score', 'peak_strand',
         'gene_chrom', 'gene_start', 'gene_end', 'gene_name', 'gene_score', 'gene_strand',
         'distance']
-peak_gene = pd.read_csv("/N/project/Krolab/isabella/chip-seq/peak-analy/peak_to_gene.tsv", 
+peak_gene = pd.read_csv("/N/project/Krolab/isabella/H3K9me2-Research/chip-seq/peak-analy/peak_to_gene.tsv", 
                         sep="\t", header=None, names=cols)
 print(f"Total peaks: {len(peak_gene)}")
 print("part 1 done")
 
 # Load expression matrix
-expr = pd.read_csv("/N/project/Krolab/isabella/ds-analysis/logCPM_TMM_cleaned.csv", index_col=0)
+expr = pd.read_csv("/N/project/Krolab/isabella/H3K9me2-Research/ds-analysis/logCPM_TMM_cleaned.csv", index_col=0)
 expr.index = expr.index.str.replace(r'\.\d+$', '', regex=True)
 print("part 2 done")
 
 # Load Ensembl ID to gene name map
-gene_map = pd.read_csv("/N/project/Krolab/isabella/annotations/ensembl_id_to_name.tsv", 
+gene_map = pd.read_csv("/N/project/Krolab/isabella/H3K9me2-Research/annotations/ensembl_id_to_name.tsv", 
                        sep="\t", header=None, names=["gene_id", "gene_name"])
 
 # Strip version numbers from gene_map gene_ids

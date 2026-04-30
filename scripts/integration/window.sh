@@ -3,9 +3,9 @@
 # Load bedtools
 module load bedtools
 
-GENE_BED="/N/project/Krolab/isabella/ds-analysis/logCPM_TMM_genes.bed"
-PEAK_BED="/N/project/Krolab/isabella/chip-seq/peak-analy/diffreps_peaks.bed"
-GENOME_FILE="/N/project/Krolab/isabella/annotations/hg38_primary_chrom_sizes.txt"
+GENE_BED="/N/project/Krolab/isabella/H3K9me2-Research/ds-analysis/logCPM_TMM_genes.bed"
+PEAK_BED="/N/project/Krolab/isabella/H3K9me2-Research/chip-seq/peak-analy/diffreps_peaks.bed"
+GENOME_FILE="/N/project/Krolab/isabella//H3K9me2-Research/annotations/hg38_primary_chrom_sizes.txt"
 
 echo "Using files:"
 echo "  Genes: $GENE_BED"

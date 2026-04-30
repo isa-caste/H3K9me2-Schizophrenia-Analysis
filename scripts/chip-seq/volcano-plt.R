@@ -1,23 +1,28 @@
-#load data
-data_root <- "/path/to/data"
-df <- read.table(file.path(data_root, "chip-seq/peaks/diffreps_output.txt"),
+# Load data
+df <- read.table("/N/project/Krolab/isabella/H3K9me2-Research/chip-seq/peak-analy/diffreps_output.txt",
                  header=TRUE, sep="\t", comment.char="#")
 
 # Calculate -log10(p-value)
 df$log10p <- -log10(df$pval)
 
+# Significance thresholds
+fc_threshold <- 0.3     # log2 fold change cutoff
+padj_threshold <- 0.05  # adjusted p-value cutoff
+
 # Classify significance
-df$EventColor <- ifelse(df$padj < 0.05 & abs(df$log2FC) > 1,
-                        ifelse(df$log2FC > 1, "Up", "Down"), "NS")
+df$EventColor <- ifelse(df$padj < padj_threshold & df$log2FC > fc_threshold, "Up",
+                  ifelse(df$padj < padj_threshold & df$log2FC < -fc_threshold, "Down", "NS"))
 
 # Count for annotation
 num_up <- sum(df$EventColor == "Up", na.rm=TRUE)
 num_down <- sum(df$EventColor == "Down", na.rm=TRUE)
 num_sig <- num_up + num_down
 
-# Save plot
-png(data_root, "chip-seq/peak-analy/volcano_plot.png", width=1000, height=800)
-par(mar = c(5, 5, 4, 6))  # Set margins to avoid text cutoff
+# Save plot as PNG
+png("/N/project/Krolab/isabella/H3K9me2-Research/chip-seq/peak-analy/volcano_plot.png",
+    width=1000, height=800, type="cairo")
+
+par(mar = c(5, 5, 4, 6))
 
 # Main plot
 plot(df$log2FC, df$log10p,
@@ -29,17 +34,17 @@ plot(df$log2FC, df$log10p,
      cex.main=2, cex.lab=1.6, cex.axis=1.4)
 
 # Add threshold lines
-abline(h = -log10(0.05), col="black", lty=2, lwd=1.5)  # Horizontal line at p=0.05
-abline(v = -2, col="black", lty=2, lwd=1.5)            # Vertical lines at -2 and 2
-abline(v = 2, col="black", lty=2, lwd=1.5)
+abline(h = -log10(padj_threshold), col="black", lty=2, lwd=1.5)
+abline(v = -fc_threshold, col="black", lty=2, lwd=1.5)
+abline(v = fc_threshold, col="black", lty=2, lwd=1.5)
 
-# Add counts as text on plot
+# Legend
 legend("topright", legend=c("Up", "Down", "NS"),
        col=c("red", "blue", "gray"), pch=20, cex=1.4)
 
+# Annotation with counts
 text(x = min(df$log2FC, na.rm=TRUE), y = max(df$log10p, na.rm=TRUE),
      labels = paste0("Up: ", num_up, "\nDown: ", num_down, "\nTotal sig: ", num_sig),
      adj = c(0,1), cex=1.4)
 
 dev.off()
-

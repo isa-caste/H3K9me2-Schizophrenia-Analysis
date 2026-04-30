@@ -1,0 +1,12 @@
+DMG vs DEG Venn Summary
+--------------------------------------------------
+DMG: |peak_score| > 0.30 in peak_gene_DEGs_unfiltered.tsv
+DEG: P.Value < 0.05 from full limma_deg_results.csv
+Matched on Ensembl IDs.
+--------------------------------------------------
+DMG:              178
+DEG:              1065
+DMG only:         164
+DEG only:         1051
+Overlap:          14
+

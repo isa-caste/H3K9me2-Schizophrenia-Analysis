@@ -1,4 +1,3 @@
-# DMG vs DEG Venn Diagram 
 library(ggplot2)
 
 PEAK_GENE_FILE <- "peak_gene_DEGs_unfiltered.tsv"
@@ -8,8 +7,9 @@ ENSEMBL_MAP    <- "/N/project/Krolab/isabella/H3K9me2-Research/annotations/ensem
 OUT_DIR        <- "/N/project/Krolab/isabella/H3K9me2-Research/ds-analysis"
 dir.create(OUT_DIR, showWarnings = FALSE)
 
-PEAK_SCORE_THRESH <- -log10(0.05)
-DEG_P_THRESH      <- 0.05
+# FIXED: Use log2FC threshold - peak_score contains the log2FC values
+PEAK_LOG2FC_THRESH <- 0.3  # Minimum absolute log2 fold change
+DEG_P_THRESH       <- 0.05
 
 cat("1. Loading data...\n")
 peak_gene <- read.table(PEAK_GENE_FILE, sep = "\t", header = TRUE,
@@ -20,9 +20,11 @@ limma <- read.csv(LIMMA_FILE, stringsAsFactors = FALSE, row.names = 1)
 limma$ensembl_id <- rownames(limma)
 cat(sprintf("   LIMMA table:     %d genes\n", nrow(limma)))
 
-cat(sprintf("\n2. Defining DMGs: peak_score > %.3f\n", PEAK_SCORE_THRESH))
+cat(sprintf("\n2. Defining DMGs: |peak_score| > %.2f\n", PEAK_LOG2FC_THRESH))
+# Convert peak_score to numeric in case it's character
+peak_gene$peak_score <- as.numeric(peak_gene$peak_score)
 dmg_set <- unique(peak_gene$gene_id[!is.na(peak_gene$peak_score) &
-                                     peak_gene$peak_score > PEAK_SCORE_THRESH])
+                                     abs(peak_gene$peak_score) > PEAK_LOG2FC_THRESH])
 dmg_set <- dmg_set[!is.na(dmg_set) & dmg_set != ""]
 cat(sprintf("   DMG: %d unique genes\n", length(dmg_set)))
 
@@ -76,7 +78,7 @@ write.csv(attach_names(dmg_only),
 write.csv(attach_names(deg_only),
           file.path(OUT_DIR, "DEG_only.csv"), row.names = FALSE)
 
-# Venn plot 
+# ---- Venn plot --------------------------------------------------------------
 cat("\n6. Making Venn...\n")
 make_circle <- function(x0, y0, r, n = 200) {
   theta <- seq(0, 2 * pi, length.out = n)
@@ -98,13 +100,12 @@ c1 <- make_circle(x1, 0, r_dmg); c1$set <- "DMG"
 c2 <- make_circle(x2, 0, r_deg); c2$set <- "DEG"
 circles <- rbind(c1, c2)
 
-# Region-count labels: outside-left, center-overlap, outside-right
-overlap_x <- x1 + r_dmg - (overlap_depth / 2)
-
+# ADJUSTED LABEL POSITIONS
+# Region-count labels: shifted to better positions
 label_df <- data.frame(
-  x     = c(x1 - r_dmg * 0.3,        # DMG-only: centered in left lune
-            overlap_x,                # overlap: middle of the lens
-            x2 + r_deg * 0.5),        # DEG-only: right portion of DEG circle
+  x     = c(x1 - r_dmg * 0.7,        # DMG-only: further left
+            x1 + r_dmg * 0.35,       # overlap: shifted right into overlap zone
+            x2 + r_deg * 0.4),       # DEG-only: right portion of DEG circle
   y     = c(0, 0, 0),
   label = c(n_dmg_only, n_overlap, n_deg_only)
 )
@@ -134,7 +135,8 @@ p <- ggplot() +
   scale_fill_manual(values = c("DMG" = "lightsalmon", "DEG" = "darkolivegreen")) +
   coord_fixed(xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
   labs(title    = "DMGs vs DEGs",
-       subtitle = "Peak raw p < 0.05  |  Expression raw p < 0.05") +
+       subtitle = sprintf("|log2FC| > %.1f for peaks  |  P-value < %.2f for expression", 
+                         PEAK_LOG2FC_THRESH, DEG_P_THRESH)) +
   theme_void() +
   theme(legend.position = "none",
         plot.title    = element_text(face = "bold", hjust = 0.5, size = 16,
@@ -152,8 +154,8 @@ cat(sprintf("   Saved %s/venn_DMG_vs_DEG.{png,pdf}\n", OUT_DIR))
 summary_txt <- paste0(
   "DMG vs DEG Venn Summary\n",
   strrep("-", 50), "\n",
-  "DMG: peak_score > 1.301 in peak_gene_DEGs_unfiltered.tsv\n",
-  "DEG: P.Value < 0.05 from full limma_deg_results.csv\n",
+  sprintf("DMG: |peak_score| > %.2f in peak_gene_DEGs_unfiltered.tsv\n", PEAK_LOG2FC_THRESH),
+  sprintf("DEG: P.Value < %.2f from full limma_deg_results.csv\n", DEG_P_THRESH),
   "Matched on Ensembl IDs.\n",
   strrep("-", 50), "\n",
   sprintf("DMG:              %d\nDEG:              %d\n", n_dmg, n_deg),
@@ -165,3 +167,6 @@ if (length(coord_genes) > 0) {
     sprintf("Coordinated:      %d  (in overlap: %d)\n",
             length(coord_genes), length(coord_in_overlap)))
 }
+
+writeLines(summary_txt, file.path(OUT_DIR, "venn_summary.txt"))
+cat("\nDone!\n")

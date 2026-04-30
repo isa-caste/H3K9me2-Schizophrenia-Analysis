@@ -1,16 +1,18 @@
+
+#!/usr/bin/env python3
 #!/usr/bin/env python3
 import pandas as pd
 
 # Load RNA-seq expression matrix
-expr = pd.read_csv("/N/project/Krolab/isabella/rna-seq/quant-norm/logCPM_TMM.csv", index_col=0)
+expr = pd.read_csv("/N/project/Krolab/isabella/H3K9me2-Research/rna-seq/quant-norm/logCPM_TMM.csv", index_col=0)
 
-# Remove Ensembl version suffix from gene IDs
+# Remove Ensembl version suffix from gene IDs (e.g., ENSG0000012345.6 → ENSG0000012345)
 expr.index = expr.index.str.replace(r'\.\d+$', '', regex=True)
 expr.index = expr.index.astype(str).str.strip()  # Added strip to remove whitespace
 
 # Load gene coordinates BED file
 coords = pd.read_csv(
-    "/N/project/Krolab/isabella/annotations/genocode_tss.bed",
+    "/N/project/Krolab/isabella/H3K9me2-Research/annotations/gencode_tss.bed",
     sep="\t",
     header=None,
     names=["chrom", "start", "end", "gene_name", "score", "strand"]
@@ -20,13 +22,13 @@ print(coords.head())
 
 # Load Ensembl gene ID to gene name mapping
 map_df = pd.read_csv(
-    "/N/project/Krolab/isabella/annotations/ensembl_id_to_name.tsv",
+    "/N/project/Krolab/isabella/H3K9me2-Research/annotations/ensembl_id_to_name.tsv",
     sep="\t",
     header=None,
     names=["gene_id", "gene_name"]
 )
 
-# clean the mapping file gene IDs
+# 🔧 CRITICAL FIX: Also clean the mapping file gene IDs
 map_df["gene_id"] = map_df["gene_id"].str.replace(r'\.\d+$', '', regex=True)
 map_df["gene_id"] = map_df["gene_id"].astype(str).str.strip()  # Added strip
 map_df["gene_name"] = map_df["gene_name"].astype(str).str.strip()  # Added strip
@@ -80,7 +82,7 @@ else:
     
     # Save BED file with expression values
     merged_output.to_csv(
-        "/N/project/Krolab/isabella/ds-analysis/logCPM_TMM_genes.bed",
+        "/N/project/Krolab/isabella/H3K9me2-Research/ds-analysis/logCPM_TMM_genes.bed",
         sep="\t",
         header=True,  # Changed to True to include column names
         index=False
