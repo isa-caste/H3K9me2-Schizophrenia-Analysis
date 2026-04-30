@@ -12,11 +12,12 @@
 #SBATCH -o bamtobedchip.out  
 #SBATCH -e bamtobedchip.err  
 #SBATCH -A r00750 
+
 module load bedtools
 
-# Directories
-BAM_DIR=/N/project/Krolab/isabella/data/chip-seq/chip-align/chip-bam
-BED_DIR=/N/project/Krolab/isabella/data/chip-seq/bedfiles-chip
+DATA_ROOT=/path/to/data
+BAM_DIR=$DATA_ROOT/chip-seq/aligned
+BED_DIR=$DATA_ROOT/chip-seq/bed
 
 # Make output dir if it doesn't exist
 mkdir -p $BED_DIR

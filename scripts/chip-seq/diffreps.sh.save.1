@@ -25,6 +25,18 @@ DIFFREPS_BIN=/path/to/tools/diffreps/bin/diffReps.pl
 # Go to output directory
 cd $DATA_ROOT/chip-seq/peaks/ 
 
+
+perl $DIFFREPS_BIN \
+    --treatment $DATA_ROOT/chip-seq/bed/scz_chip_1.bed \
+    --control $DATA_ROOT/chip-seq/bed/cntrl_chip_1.bed \
+    --chrlen $REPO_ROOT/annotations/hg38.chrom.sizes \
+    --window 1000 \
+    --step 100 \
+    --meth gt \
+    --nproc 4 \
+    --pval 0.05 \
+    --report $DATA_ROOT/chip-seq/peaks/diffreps_output.txt
+
 perl /N/project/Krolab/isabella/chip-seq/diffreps/bin/diffReps.pl \
 --treatment /N/project/Krolab/isabella/chip-seq/bedfiles-chip/scz_chip_1.bed \
 --control /N/project/Krolab/isabella/chip-seq/bedfiles-chip/cntrl_chip_1.bed \

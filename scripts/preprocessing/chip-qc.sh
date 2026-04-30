@@ -14,20 +14,25 @@
 
 # Load Conda and activate environment
 module load conda
-source activate align-qc-env 
+conda activate align-qc-env
 
-# Go to FASTQ directory
-cd /N/project/Krolab/isabella/data/chip-seq/trimming/trimmed-files
+DATA_ROOT=/path/to/data
 
-# Make output directory for FastQC logs
-mkdir -p trim_qc_logs
+# Set working directory
+cd $DATA_ROOT/chip-seq/aligned
 
-# Run FastQC on all .fastq.gz files
-fastqc -t 4 -o trim_qc_logs *.fastq.gz
+# Create output folder for logs
+mkdir -p bam_qc_logs
 
-# Run MultiQC to summarize FastQC output
-multiqc trim_qc_logs -o multiqc_trim_report_all_chip
+# Loop over each BAM file
+for bam in *.bam; do
+  sample=$(basename "$bam" .bam)
+  samtools flagstat "$bam" > bam_qc_logs/"$sample"_flagstat.txt
+  samtools stats "$bam" > bam_qc_logs/"$sample"_stats.txt
+done
 
-# Deactivate environment
+# Generate MultiQC report
+multiqc bam_qc_logs -o multiqc_bam_report_all
+
+# Done
 conda deactivate
-

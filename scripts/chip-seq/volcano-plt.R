@@ -1,5 +1,6 @@
-# Load data
-df <- read.table("/N/project/Krolab/isabella/chip-seq/peak-analy/diffreps_output.txt",
+#load data
+data_root <- "/path/to/data"
+df <- read.table(file.path(data_root, "chip-seq/peaks/diffreps_output.txt"),
                  header=TRUE, sep="\t", comment.char="#")
 
 # Calculate -log10(p-value)
@@ -15,7 +16,7 @@ num_down <- sum(df$EventColor == "Down", na.rm=TRUE)
 num_sig <- num_up + num_down
 
 # Save plot
-png("/N/project/Krolab/isabella/chip-seq/peak-analy/volcano_plot.png", width=1000, height=800)
+png(data_root, "chip-seq/peak-analy/volcano_plot.png", width=1000, height=800)
 par(mar = c(5, 5, 4, 6))  # Set margins to avoid text cutoff
 
 # Main plot

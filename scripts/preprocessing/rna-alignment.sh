@@ -18,9 +18,11 @@ module load bowtie/2.5.1
 module load samtools
 
 # Define input/output directories
-TRIMMED_DIR=/N/project/Krolab/isabella/data/rna-seq/trimmed
-INDEX_DIR=/N/project/Krolab/isabella/data/rna-seq/hg38_bt2_index/GRCh38
-OUTDIR=/N/project/Krolab/isabella/data/rna-seq/rna-align/rna-bam
+DATA_ROOT=/path/to/data
+REPO_ROOT=/path/to/H3K9me2-Schizophrenia-Analysis
+TRIMMED_DIR=$DATA_ROOT/rna-seq/trimmed
+INDEX_DIR=$REPO_ROOT/annotations/hg38_bt2_index/GRCh38
+OUTDIR=$DATA_ROOT/rna-seq/aligned
 
 # Move to trimmed FASTQ directory
 cd "$TRIMMED_DIR"

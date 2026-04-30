@@ -18,9 +18,11 @@ module load bowtie/2.5.1
 module load samtools
 
 # Define input/output directories
-TRIMMED_DIR=/N/project/Krolab/isabella/data/chip-seq/trimmed
-INDEX_DIR=/N/project/Krolab/isabella/annotations/hg38_bt2_index/GRCh38
-OUTDIR=/N/project/Krolab/isabella/data/chip-seq/chip-align/chip--bam
+REPO_ROOT=/path/to/H3K9me2-Schizophrenia-Analysis
+DATA_ROOT=/path/to/data
+TRIMMED_DIR=$DATA_ROOT/chip-seq/trimmed
+INDEX_DIR=$REPO_ROOT/annotations/hg38_bt2_index/GRCh38
+OUTDIR=$DATA_ROOT/chip-seq/aligned
 
 # Move to trimmed FASTQ directory
 cd "$TRIMMED_DIR"

@@ -12,14 +12,15 @@
 #SBATCH -e qca.err
 #SBATCH -A r00750
 
-# Load or initialize conda if needed
-source ~/.bashrc     # Ensure conda is in your path (may be ~/.bash_profile on some systems)
 
 # Activate your environment
+module load conda
 conda activate align-qc-env
 
+DATA_ROOT=/path/to/data
+
 # Set working directory
-cd /N/project/Krolab/isabella/data/rna-seq/rna-align/rna-bam
+cd $DATA_ROOT/rna-seq/aligned
 
 # Create output folder for logs
 mkdir -p bam_qc_logs
